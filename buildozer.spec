@@ -40,11 +40,11 @@ fullscreen = 0
 # Android specific
 #------------------------------------------------------------------------------
 
-android.api = 33
+android.api = 31
 android.minapi = 24
 android.ndk = 25b
 android.accept_sdk_license = True
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 android.logcat_filters = *:S python:D
 android.permissions = RECORD_AUDIO, INTERNET, VIBRATE, MODIFY_AUDIO_SETTINGS
 
