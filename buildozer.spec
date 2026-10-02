@@ -28,7 +28,7 @@ source.exclude_dirs = tests, bin, venv, .venv, .git, .github, dist, build, __pyc
 version = 0.1.0
 
 # (list) Application requirements (comma separated)requirements = python3,kivy,pyjnius,android,pyjniusd
-requirements = python3,kivy==2.2.1,pyjnius
+requirements = python3==3.11.5,kivy==2.2.1,pyjnius
 
 # (str) Supported orientation
 orientation = portrait
@@ -58,3 +58,5 @@ android.permissions = RECORD_AUDIO, INTERNET, VIBRATE, MODIFY_AUDIO_SETTINGS
 
 log_level = 2
 warn_on_root = 0
+p4a.branch = develop
+p4a.fork = kivy
