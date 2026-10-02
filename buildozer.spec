@@ -28,7 +28,7 @@ source.exclude_dirs = tests, bin, venv, .venv, .git, .github, dist, build, __pyc
 version = 0.1.0
 
 # (list) Application requirements (comma separated)requirements = python3,kivy,pyjnius,android,pyjniusd
-requirements = python3==3.11.5,kivy==2.2.1,pyjnius
+requirements = python3,kivy==2.2.1,pyjnius
 
 # (str) Supported orientation
 orientation = portrait
@@ -47,6 +47,7 @@ android.accept_sdk_license = True
 android.archs = arm64-v8a
 android.logcat_filters = *:S python:D
 android.permissions = RECORD_AUDIO, INTERNET, VIBRATE, MODIFY_AUDIO_SETTINGS
+android.python = 3.11
 
 # Detected entry: main.py
 
@@ -58,5 +59,5 @@ android.permissions = RECORD_AUDIO, INTERNET, VIBRATE, MODIFY_AUDIO_SETTINGS
 
 log_level = 2
 warn_on_root = 0
-p4a.branch = develop
-p4a.fork = kivy
+#p4a.branch = develop
+#p4a.fork = kivy
