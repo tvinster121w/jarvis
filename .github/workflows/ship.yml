@@ -47,7 +47,23 @@ jobs:
       - name: Build APK
         run: |
           source ~/buildozer-venv/bin/activate
-          yes | buildozer android debug 2>&1 | tail -200
+          yes | buildozer android debug 2>&1 | tee buildozer_full.log
+
+      - name: Show Build Errors
+        if: always()
+        run: |
+          echo "===== SEARCHING FOR ERRORS ====="
+          grep -i -B 3 -A 25 "error\|traceback\|exception\|failed\|critical" buildozer_full.log | tail -300 || true
+          echo "===== LAST 100 LINES ====="
+          tail -100 buildozer_full.log
+
+      - name: Upload Full Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-log
+          path: buildozer_full.log
+          if-no-files-found: warn
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
