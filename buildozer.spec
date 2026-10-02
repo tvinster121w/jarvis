@@ -27,8 +27,8 @@ source.exclude_dirs = tests, bin, venv, .venv, .git, .github, dist, build, __pyc
 # (str) Application versioning
 version = 0.1.0
 
-# (list) Application requirements (comma separated)
-requirements = python3,kivy
+# (list) Application requirements (comma separated)requirements = python3,kivy,pyjnius,android,pyjnius
+requirements = python3,kivy,pyjnius,android
 
 # (str) Supported orientation
 orientation = portrait
@@ -46,6 +46,7 @@ android.ndk = 25b
 android.accept_sdk_license = True
 android.archs = arm64-v8a, armeabi-v7a
 android.logcat_filters = *:S python:D
+android.permissions = RECORD_AUDIO, INTERNET, VIBRATE, MODIFY_AUDIO_SETTINGS
 
 # Detected entry: main.py
 
