@@ -2,7 +2,8 @@ name: Build Jarvis APK
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
@@ -15,34 +16,41 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
+          sudo apt-get install -y git zip unzip
+          sudo apt-get install -y openjdk-17-jdk
+          sudo apt-get install -y autoconf libtool pkg-config
+          sudo apt-get install -y zlib1g-dev libncurses5-dev
+          sudo apt-get install -y libncursesw5-dev libtinfo5
+          sudo apt-get install -y cmake libffi-dev libssl-dev automake
 
       - name: Install Buildozer
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          python -m pip install --upgrade pip
+          python -m pip install buildozer cython==0.29.36
 
-      - - name: Build APK with Buildozer
-  run:
-    set -o pipefail
-    yes | buildozer android debug 2>&1 | tail -150
+      - name: Build APK
+        run: |
+          yes | buildozer android debug 2>&1 | tail -150
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: jarvis-apk
           path: bin/*.apk
+          if-no-files-found: warn
 
       - name: Create Release
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Jarvis v1.0.${{ github.run_number }}
+          tag_name: v0.1.0-build1
+          name: Jarvis Build 1
           files: bin/*.apk
           draft: false
           prerelease: false
