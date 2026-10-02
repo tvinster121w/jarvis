@@ -28,7 +28,7 @@ source.exclude_dirs = tests, bin, venv, .venv, .git, .github, dist, build, __pyc
 version = 0.1.0
 
 # (list) Application requirements (comma separated)requirements = python3,kivy,pyjnius,android,pyjnius
-requirements = kivy,pyjnius,android
+requirements = python3,kivy==2.3.0,pyjnius,android
 
 # (str) Supported orientation
 orientation = portrait
