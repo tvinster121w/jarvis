@@ -7,37 +7,19 @@
 <title>J.A.R.V.I.S.</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
-  body {
-    font-family: -apple-system, 'Segoe UI', sans-serif;
-    background: radial-gradient(circle at 50% 30%, #0d2847 0%, #050d17 70%);
-    color: #7fdfff; min-height:100vh; display:flex; flex-direction:column; overflow:hidden;
-  }
+  body { font-family:-apple-system,'Segoe UI',sans-serif; background:radial-gradient(circle at 50% 30%, #0d2847 0%, #050d17 70%); color:#7fdfff; min-height:100vh; display:flex; flex-direction:column; overflow:hidden; }
   header { padding:18px; text-align:center; border-bottom:1px solid rgba(127,223,255,0.2); }
   h1 { font-size:22px; letter-spacing:6px; color:#7fdfff; text-shadow:0 0 12px #1e90ff; font-weight:300; }
   .status { font-size:12px; color:#4a90b8; margin-top:4px; letter-spacing:2px; }
+  .wake-hint { font-size:11px; color:#00ffcc; margin-top:6px; letter-spacing:2px; }
   .core-wrap { flex:1; display:flex; align-items:center; justify-content:center; position:relative; }
-  .core {
-    width:180px; height:180px; border-radius:50%;
-    background: radial-gradient(circle at 50% 50%, #4dd2ff 0%, #1e90ff 40%, #0a1929 75%);
-    box-shadow: 0 0 60px #1e90ff, inset 0 0 40px #7fdfff;
-    transition: all 0.3s ease; position:relative;
-  }
-  .core::before, .core::after {
-    content:''; position:absolute; inset:-20px;
-    border:1px solid rgba(127,223,255,0.4); border-radius:50%;
-    animation: rotate 8s linear infinite;
-  }
+  .core { width:180px; height:180px; border-radius:50%; background:radial-gradient(circle at 50% 50%, #4dd2ff 0%, #1e90ff 40%, #0a1929 75%); box-shadow:0 0 60px #1e90ff, inset 0 0 40px #7fdfff; transition:all 0.3s ease; position:relative; }
+  .core::before, .core::after { content:''; position:absolute; inset:-20px; border:1px solid rgba(127,223,255,0.4); border-radius:50%; animation:rotate 8s linear infinite; }
   .core::after { inset:-40px; border-color:rgba(127,223,255,0.2); animation-duration:14s; animation-direction:reverse; }
-  .core.listening {
-    box-shadow: 0 0 90px #00ffcc, inset 0 0 50px #7fffee;
-    background: radial-gradient(circle at 50% 50%, #00ffcc 0%, #0099ff 40%, #0a1929 75%);
-    animation: pulse 1s ease-in-out infinite;
-  }
-  .core.speaking {
-    box-shadow: 0 0 90px #ff9500, inset 0 0 50px #ffd27f;
-    background: radial-gradient(circle at 50% 50%, #ffb84d 0%, #ff6a00 40%, #0a1929 75%);
-  }
-  @keyframes rotate { to { transform: rotate(360deg); } }
+  .core.awaiting { box-shadow:0 0 80px #00ffcc, inset 0 0 40px #7fffee; opacity:0.7; }
+  .core.listening { box-shadow:0 0 90px #00ffcc, inset 0 0 50px #7fffee; background:radial-gradient(circle at 50% 50%, #00ffcc 0%, #0099ff 40%, #0a1929 75%); animation:pulse 1s ease-in-out infinite; }
+  .core.speaking { box-shadow:0 0 90px #ff9500, inset 0 0 50px #ffd27f; background:radial-gradient(circle at 50% 50%, #ffb84d 0%, #ff6a00 40%, #0a1929 75%); }
+  @keyframes rotate { to { transform:rotate(360deg); } }
   @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
   .log { flex:1; max-height:30vh; overflow-y:auto; padding:12px 16px; font-size:14px; line-height:1.5; border-top:1px solid rgba(127,223,255,0.2); }
   .log::-webkit-scrollbar { width:4px; }
@@ -51,6 +33,8 @@
   button:active { transform:scale(0.96); background:rgba(30,144,255,0.35); }
   button.mic { flex:2; }
   button.mic.active { background:#00ffcc; color:#0a1929; box-shadow:0 0 25px #00ffcc; }
+  button.wake-btn { background:rgba(0,255,204,0.15); border-color:#00ffcc; color:#00ffcc; font-size:13px; }
+  button.wake-btn.active { background:#00ffcc; color:#0a1929; }
   button.mic:disabled { opacity:0.3; }
 </style>
 </head>
@@ -58,7 +42,8 @@
 
 <header>
   <h1>J.A.R.V.I.S.</h1>
-  <div class="status" id="status">НАЖМИТЕ КНОПКУ И ГОВОРИТЕ</div>
+  <div class="status" id="status">НАЖМИТЕ "АКТИВИРОВАТЬ СЛУШАНИЕ"</div>
+  <div class="wake-hint" id="wakeHint">Скажите «Джарвис» для активации</div>
 </header>
 
 <div class="core-wrap">
@@ -68,17 +53,22 @@
 <div class="log" id="log"></div>
 
 <div class="controls">
-  <button class="mic" id="micBtn">🎤 Слушать</button>
+  <button class="wake-btn" id="wakeBtn">🔊 Активировать слушание</button>
   <button id="clearBtn">✕</button>
 </div>
 
 <script>
 const USER_NAME = "сэр";
 const LANG = "ru-RU";
+const WAKE_WORDS = ['джарвис', 'jarvis', 'жарвис', 'джарви'];
+const COMMAND_TIMEOUT = 6000; // 6 секунд после активации
+const WAKE_RESTART_DELAY = 500; // перезапуск после короткой паузы
+
 const logEl = document.getElementById('log');
-const micBtn = document.getElementById('micBtn');
+const wakeBtn = document.getElementById('wakeBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusEl = document.getElementById('status');
+const wakeHintEl = document.getElementById('wakeHint');
 const coreEl = document.getElementById('core');
 
 const synth = window.speechSynthesis;
@@ -99,6 +89,7 @@ function speak(text) {
   synth.speak(u);
   addLog('jarvis', text);
 }
+
 function addLog(who, text) {
   const div = document.createElement('div');
   div.className = 'msg ' + who;
@@ -109,20 +100,153 @@ function addLog(who, text) {
 }
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null, listening = false;
+let recognition = null;
+let wakeListening = false;    // в режиме ожидания "Джарвис"
+let commandMode = false;      // в режиме ожидания команды
+let commandTimeout = null;
+let restarting = false;
+
 if (SR) {
   recognition = new SR();
   recognition.lang = LANG;
-  recognition.interimResults = false;
-  recognition.continuous = false;
-  recognition.onstart = () => { listening = true; micBtn.classList.add('active'); micBtn.textContent = '⏹ Стоп'; statusEl.textContent = 'СЛУШАЮ...'; coreEl.classList.add('listening'); };
-  recognition.onend = () => { listening = false; micBtn.classList.remove('active'); micBtn.textContent = '🎤 Слушать'; statusEl.textContent = 'НАЖМИТЕ КНОПКУ И ГОВОРИТЕ'; coreEl.classList.remove('listening'); };
-  recognition.onerror = (e) => { if (e.error === 'no-speech') addLog('sys', 'Ничего не услышал'); else addLog('sys', 'Ошибка: ' + e.error); };
-  recognition.onresult = (e) => { const text = e.results[0][0].transcript.trim(); if (text) handleCommand(text); };
+  recognition.interimResults = true;
+  recognition.continuous = true;
+
+  recognition.onstart = () => {
+    if (commandMode) {
+      statusEl.textContent = 'СЛУШАЮ КОМАНДУ...';
+      coreEl.classList.add('listening');
+      coreEl.classList.remove('awaiting');
+    } else {
+      statusEl.textContent = 'ЖДУ СЛОВО «ДЖАРВИС»';
+      coreEl.classList.add('awaiting');
+    }
+  };
+
+  recognition.onresult = (event) => {
+    let finalText = '';
+    let interimText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const res = event.results[i];
+      if (res.isFinal) finalText += res[0].transcript + ' ';
+      else interimText += res[0].transcript + ' ';
+    }
+    const allText = (finalText + ' ' + interimText).toLowerCase().trim();
+
+    // Если мы в режиме ожидания wake word
+    if (wakeListening && !commandMode) {
+      const hasWake = WAKE_WORDS.some(w => allText.includes(w));
+      if (hasWake) {
+        // Извлекаем часть ПОСЛЕ "джарвис" — это может быть сразу команда
+        const wakeWord = WAKE_WORDS.find(w => allText.includes(w));
+        const idx = allText.indexOf(wakeWord);
+        const afterWake = allText.substring(idx + wakeWord.length).trim();
+
+        triggerWake(afterWake);
+      }
+    }
+    // Если мы в режиме команды — берём final текст
+    else if (commandMode && finalText.trim()) {
+      const cmd = finalText.trim();
+      clearTimeout(commandTimeout);
+      commandMode = false;
+      handleCommand(cmd);
+      // После выполнения команды — назад в режим ожидания wake
+      setTimeout(() => restartWakeListening(), 500);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+    addLog('sys', 'Ошибка: ' + e.error);
+    if (e.error === 'not-allowed') {
+      wakeListening = false;
+      commandMode = false;
+      wakeBtn.classList.remove('active');
+      wakeBtn.textContent = '🔊 Активировать слушание';
+      statusEl.textContent = 'РАЗРЕШИТЕ МИКРОФОН';
+    }
+  };
+
+  recognition.onend = () => {
+    if (restarting) return;
+    restarting = true;
+    setTimeout(() => {
+      restarting = false;
+      if (wakeListening || commandMode) {
+        try { recognition.start(); } catch(e) {}
+      }
+    }, WAKE_RESTART_DELAY);
+  };
 } else {
-  micBtn.disabled = true; statusEl.textContent = 'БРАУЗЕР НЕ ПОДДЕРЖИВАЕТ ГОЛОС';
+  wakeBtn.disabled = true;
+  statusEl.textContent = 'БРАУЗЕР НЕ ПОДДЕРЖИВАЕТ ГОЛОС';
 }
-micBtn.onclick = () => { if (!recognition) return; if (listening) recognition.stop(); else { synth.cancel(); recognition.start(); } };
+
+function triggerWake(afterWake) {
+  // Услышали "Джарвис"!
+  if (afterWake && afterWake.length > 2) {
+    // Команда сразу после слова
+    wakeListening = false;
+    commandMode = false;
+    handleCommand(afterWake);
+    setTimeout(() => restartWakeListening(), 1000);
+  } else {
+    // Просто "Джарвис" — короткий отклик и ждём команду
+    wakeListening = false;
+    commandMode = true;
+    speak('Да, ' + USER_NAME + '?');
+    statusEl.textContent = 'СЛУШАЮ КОМАНДУ...';
+    coreEl.classList.add('listening');
+    coreEl.classList.remove('awaiting');
+    // Если через 6 секунд команды не будет — назад в режим wake
+    commandTimeout = setTimeout(() => {
+      if (commandMode) {
+        commandMode = false;
+        addLog('sys', 'Команда не поступила, возврат в режим ожидания');
+        restartWakeListening();
+      }
+    }, COMMAND_TIMEOUT);
+  }
+}
+
+function restartWakeListening() {
+  wakeListening = true;
+  commandMode = false;
+  statusEl.textContent = 'ЖДУ СЛОВО «ДЖАРВИС»';
+  coreEl.classList.remove('listening');
+  coreEl.classList.add('awaiting');
+  if (!recognition) return;
+  try { recognition.stop(); } catch(e) {}
+  setTimeout(() => {
+    try { recognition.start(); } catch(e) {}
+  }, 300);
+}
+
+wakeBtn.onclick = () => {
+  if (!recognition) return;
+  if (wakeListening || commandMode) {
+    // Выключить
+    wakeListening = false;
+    commandMode = false;
+    clearTimeout(commandTimeout);
+    try { recognition.stop(); } catch(e) {}
+    wakeBtn.classList.remove('active');
+    wakeBtn.textContent = '🔊 Активировать слушание';
+    statusEl.textContent = 'СЛУШАНИЕ ВЫКЛЮЧЕНО';
+    wakeHintEl.textContent = 'Нажмите для активации';
+    coreEl.classList.remove('awaiting');
+    coreEl.classList.remove('listening');
+  } else {
+    // Включить
+    wakeListening = true;
+    wakeBtn.classList.add('active');
+    wakeBtn.textContent = '⏹ Выключить слушание';
+    wakeHintEl.textContent = 'Скажите «Джарвис» для активации';
+    restartWakeListening();
+  }
+};
+
 clearBtn.onclick = () => { logEl.innerHTML = ''; };
 
 function handleCommand(raw) {
@@ -185,7 +309,8 @@ function handleCommand(raw) {
 
 window.addEventListener('load', () => {
   addLog('sys', 'Система Jarvis загружена');
-  setTimeout(() => speak(`Здравствуйте, ${USER_NAME}. Джарвис к вашим услугам.`), 600);
+  addLog('sys', 'Нажмите «Активировать слушание» и скажите «Джарвис»');
+  setTimeout(() => speak(`Здравствуйте, ${USER_NAME}. Нажмите кнопку активации и скажите «Джарвис».`), 600);
 });
 </script>
 </body>
